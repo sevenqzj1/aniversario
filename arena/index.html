@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#03050a">
+<title>Arena Bot 3D</title>
+<style>
+html,body{margin:0;width:100%;height:100%;background:#03050a;color:#fff;font-family:system-ui,-apple-system,Segoe UI,sans-serif;overflow:hidden}
+#status{position:fixed;inset:0;display:grid;place-items:center;text-align:center;padding:24px;background:radial-gradient(circle at center,#0c1830,#03050a 70%)}
+#status div{max-width:520px}strong{display:block;font-size:28px;margin-bottom:8px}span{opacity:.72}
+</style>
+</head>
+<body>
+<div id="status"><div><strong>Arena Bot 3D</strong><span>Carregando o jogo...</span></div></div>
+<script>
+(async()=>{
+  try{
+    if(!('DecompressionStream' in window)) throw new Error('Seu navegador não suporta o carregador do jogo.');
+    const files=['p1.txt','p2.txt','p3.txt','p4.txt','p5.txt'];
+    const parts=await Promise.all(files.map(async file=>{
+      const r=await fetch(file,{cache:'no-store'});
+      if(!r.ok) throw new Error('Falha ao carregar '+file);
+      return await r.text();
+    }));
+    const b64=parts.join('').replace(/\s+/g,'');
+    const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+    const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    const html=await new Response(stream).text();
+    document.open();
+    document.write(html);
+    document.close();
+  }catch(e){
+    console.error(e);
+    document.getElementById('status').innerHTML='<div><strong>Não foi possível carregar</strong><span>'+String(e.message||e)+'</span></div>';
+  }
+})();
+</script>
+</body>
+</html>
