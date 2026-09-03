@@ -53,8 +53,6 @@
   function requireAuth(){const id=current();if(!id){location.replace('./index.html?login=1');return false;}migrateLegacy(id);return true;}
   function listUsers(){return Object.keys(accounts()).sort();}
 
-  /* O Store v3.4 usa uma chave única. Aqui ela é virtualmente transformada
-     em uma chave por usuário sem alterar as regras de negócio do painel. */
   try{
     Storage.prototype.getItem=function(key){if(this===localStorage&&key===LEGACY_STATE&&current())key=stateKey();return rawGet.call(this,key);};
     Storage.prototype.setItem=function(key,value){if(this===localStorage&&key===LEGACY_STATE&&current())key=stateKey();return rawSet.call(this,key,value);};
@@ -72,14 +70,15 @@
   const script=document.currentScript;
   if(script?.hasAttribute('data-guard'))requireAuth();
 
-  /* Atualiza textos do shell após ele ser criado pelos módulos do painel. */
   document.addEventListener('DOMContentLoaded',()=>{
-    const observer=new MutationObserver(()=>{
+    const updateLabels=()=>{
       const footer=document.querySelector('.app-footer span:last-child');
       if(footer&&footer.textContent.includes('Versão 3.4'))footer.textContent='Versão 3.5 · Dados separados por usuário neste navegador';
       const small=document.querySelector('.sidebar-bottom small');
       if(small&&current()&&!small.dataset.authUser){small.textContent='Usuário: '+current();small.dataset.authUser='1';}
-    });
+    };
+    updateLabels();
+    const observer=new MutationObserver(updateLabels);
     observer.observe(document.body,{childList:true,subtree:true});
   });
 })();
