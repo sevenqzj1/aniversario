@@ -34,8 +34,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
   const users=Auth.listUsers();
   if(users.length)document.querySelector('#known-users').textContent='Usuários neste navegador: '+users.join(', ');
+  setMode('login');
   const params=new URLSearchParams(location.search);
   if(params.has('logout'))note.textContent='Sessão encerrada. Entre novamente para acessar o painel.';
   if(params.has('login'))showError('Faça login para acessar o painel.');
-  setMode('login');
 });
