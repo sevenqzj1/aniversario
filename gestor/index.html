@@ -1,1 +1,164 @@
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Entrar | Gestor de Clientes e Cobranças</title><script src="js/boot.js?v=36"></script><script src="js/auth.js?v=36"></script><link rel="stylesheet" href="css/tokens.css?v=36"><link rel="stylesheet" href="css/base.css?v=36"><link rel="stylesheet" href="css/components.css?v=36"><link rel="stylesheet" href="css/login.css?v=36"><link rel="stylesheet" href="css/advanced.css?v=36"><meta name="theme-color" content="#0b2d64"><script defer src="js/login.js?v=36"></script></head><body><a class="skip" href="#login-card">Pular para o acesso</a><main class="login-layout"><section class="intro"><div class="brand"><span class="brand-mark">G</span>Gestor</div><div class="arc-stage" aria-hidden="true"><div><div class="arc-reactor"><span class="arc-ring"></span><span class="arc-ring two"></span><span class="arc-core"></span></div><div class="arc-label">GESTOR CORE · ONLINE</div></div></div><div class="intro-copy"><p class="eyebrow">SEU ESPAÇO DE GESTÃO</p><h1>Seus clientes.<br> Suas cobranças.<br> <span>Tudo em ordem.</span></h1><p>Um painel simples, rápido e funcional para organizar clientes, cobranças e mensagens.</p></div><small class="intro-footer">Clientes e cobranças em um único lugar</small></section><section class="access"><div class="login-theme"><label for="login-theme">Aparência</label><select id="login-theme" data-pref="theme"><option value="system">Usar sistema</option><option value="light">Claro</option><option value="dark">Escuro</option><option value="contrast">Alto contraste</option></select></div><div class="login-card" id="login-card" tabindex="-1"><span class="login-icon" aria-hidden="true">G</span><p class="eyebrow">BEM-VINDO AO GESTOR</p><h2>Entre na sua conta</h2><p id="auth-note" class="help">Entre com o usuário e a senha criados neste navegador.</p><div class="actions" style="margin:18px 0"><button class="btn primary" type="button" id="mode-login">Entrar</button><button class="btn" type="button" id="mode-register">Criar usuário</button></div><div id="auth-error" class="error" role="alert" tabindex="-1" hidden></div><form id="login-form" class="stack" autocomplete="on"><div class="field"><label for="login-username">Usuário</label><input id="login-username" name="username" autocomplete="username" required minlength="3" maxlength="24" placeholder="seu_usuario"></div><div class="field"><label for="login-password">Senha</label><input id="login-password" name="password" type="password" autocomplete="current-password" required minlength="6" placeholder="Sua senha"></div><button class="btn primary block" type="submit">Entrar no painel →</button></form><form id="register-form" class="stack" autocomplete="off" hidden><div class="field"><label for="register-username">Novo usuário</label><input id="register-username" name="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9._-]{3,24}" placeholder="ex.: stark"><p class="help">Use letras, números, ponto, hífen ou underline.</p></div><div class="field"><label for="register-password">Criar senha</label><input id="register-password" name="password" type="password" autocomplete="new-password" required minlength="6" placeholder="Mínimo de 6 caracteres"></div><div class="field"><label for="register-confirm">Confirmar senha</label><input id="register-confirm" name="confirm" type="password" autocomplete="new-password" required minlength="6" placeholder="Digite novamente"></div><button class="btn primary block" type="submit">Criar usuário e entrar →</button></form><p id="known-users" class="help" style="margin-top:18px"></p><div class="notice" style="margin-top:18px"><strong>Login local</strong><p>Usuários, senhas e clientes ficam somente neste navegador. Não há sincronização com outro celular ou computador.</p></div></div><footer>Gestor de Clientes e Cobranças · Versão 3.6</footer></section></main></body></html>
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Entrar | Gestor de Clientes e Cobranças</title>
+    <script src="js/boot.js?v=37"></script>
+    <script src="js/auth.js?v=37"></script>
+    <link rel="stylesheet" href="css/tokens.css?v=37" />
+    <link rel="stylesheet" href="css/base.css?v=37" />
+    <link rel="stylesheet" href="css/components.css?v=37" />
+    <link rel="stylesheet" href="css/login.css?v=37" />
+    <link rel="stylesheet" href="css/advanced.css?v=37" />
+    <meta name="theme-color" content="#0b2d64" />
+    <script defer src="js/login.js?v=37"></script>
+  </head>
+  <body>
+    <a class="skip" href="#login-card">Pular para o acesso</a>
+    <main class="login-layout">
+      <section class="intro">
+        <div class="brand"><span class="brand-mark">G</span>Gestor</div>
+        <div class="arc-stage" aria-hidden="true">
+          <div>
+            <div class="arc-reactor">
+              <span class="arc-ring"></span><span class="arc-ring two"></span
+              ><span class="arc-core"></span>
+            </div>
+            <div class="arc-label">GESTOR CORE · ONLINE</div>
+          </div>
+        </div>
+        <div class="intro-copy">
+          <p class="eyebrow">SEU ESPAÇO DE GESTÃO</p>
+          <h1>
+            Seus clientes.<br />
+            Suas cobranças.<br />
+            <span>Tudo em ordem.</span>
+          </h1>
+          <p>
+            Um painel simples, rápido e funcional para organizar clientes,
+            cobranças e mensagens.
+          </p>
+        </div>
+        <small class="intro-footer"
+          >Clientes e cobranças em um único lugar</small
+        >
+      </section>
+      <section class="access">
+        <div class="login-theme">
+          <label for="login-theme">Aparência</label
+          ><select id="login-theme" data-pref="theme">
+            <option value="system">Usar sistema</option>
+            <option value="light">Claro</option>
+            <option value="dark">Escuro</option>
+            <option value="contrast">Alto contraste</option>
+          </select>
+        </div>
+        <div class="login-card" id="login-card" tabindex="-1">
+          <span class="login-icon" aria-hidden="true">G</span>
+          <p class="eyebrow">BEM-VINDO AO GESTOR</p>
+          <h2>Entre na sua conta</h2>
+          <p id="auth-note" class="help">
+            Entre com o usuário e a senha criados neste navegador.
+          </p>
+          <div class="actions" style="margin: 18px 0">
+            <button class="btn primary" type="button" id="mode-login">
+              Entrar</button
+            ><button class="btn" type="button" id="mode-register">
+              Criar usuário
+            </button>
+          </div>
+          <div
+            id="auth-error"
+            class="error"
+            role="alert"
+            tabindex="-1"
+            hidden
+          ></div>
+          <form id="login-form" class="stack" autocomplete="on">
+            <div class="field">
+              <label for="login-username">Usuário</label
+              ><input
+                id="login-username"
+                name="username"
+                autocomplete="username"
+                required
+                minlength="3"
+                maxlength="24"
+                placeholder="seu_usuario"
+              />
+            </div>
+            <div class="field">
+              <label for="login-password">Senha</label
+              ><input
+                id="login-password"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                required
+                minlength="6"
+                placeholder="Sua senha"
+              />
+            </div>
+            <button class="btn primary block" type="submit">
+              Entrar no painel →
+            </button>
+          </form>
+          <form id="register-form" class="stack" autocomplete="off" hidden>
+            <div class="field">
+              <label for="register-username">Novo usuário</label
+              ><input
+                id="register-username"
+                name="username"
+                required
+                minlength="3"
+                maxlength="24"
+                pattern="[A-Za-z0-9._-]{3,24}"
+                placeholder="ex.: stark"
+              />
+              <p class="help">
+                Use letras, números, ponto, hífen ou underline.
+              </p>
+            </div>
+            <div class="field">
+              <label for="register-password">Criar senha</label
+              ><input
+                id="register-password"
+                name="password"
+                type="password"
+                autocomplete="new-password"
+                required
+                minlength="6"
+                placeholder="Mínimo de 6 caracteres"
+              />
+            </div>
+            <div class="field">
+              <label for="register-confirm">Confirmar senha</label
+              ><input
+                id="register-confirm"
+                name="confirm"
+                type="password"
+                autocomplete="new-password"
+                required
+                minlength="6"
+                placeholder="Digite novamente"
+              />
+            </div>
+            <button class="btn primary block" type="submit">
+              Criar usuário e entrar →
+            </button>
+          </form>
+          <p id="known-users" class="help" style="margin-top: 18px"></p>
+          <div class="notice" style="margin-top: 18px">
+            <strong>Login local</strong>
+            <p>
+              Usuários, senhas e clientes ficam somente neste navegador. Não há
+              sincronização com outro celular ou computador.
+            </p>
+          </div>
+        </div>
+        <footer>Gestor de Clientes e Cobranças · Versão 3.7</footer>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,7 +1,179 @@
-'use strict';
-function detail(id,tab='resumo'){let c=person(id);if(!c)return heading('Cliente não encontrado','Volte para a lista de clientes.','<a class="btn" href="#clientes">Voltar</a>');let rows=Store.get().bills.filter(b=>b.clientId===id);return heading(c.name,`Clientes / ${c.name} / ${tab}`,`<a class="btn" href="#editar/${encodeURIComponent(id)}">Editar cadastro</a>`+btn('+ Nova cobrança','new-bill',id,'primary'))+`<nav class="tabs" aria-label="Seções do cliente">${['resumo','cobrancas','mensagens'].map((x,i)=>`<a href="#cliente/${encodeURIComponent(id)}/${x}" ${x===tab?'aria-current="page"':''}>${['Resumo','Cobranças','Mensagens'][i]}</a>`).join('')}</nav>`+(tab==='cobrancas'?`<section class="panel">${table(rows)}</section>`:tab==='mensagens'?`<section class="panel">${history(Store.get().messages.filter(m=>m.clientId===id))}</section>`:`<div class="content-grid"><section class="panel"><div class="panel-head"><h2>Informações do cliente</h2><span class="badge">${c.active?'Ativo':'Inativo'}</span></div><div class="panel-body"><div class="form-grid">${[['WhatsApp',c.whatsapp||'Não informado'],['Plano',c.plan],['Responsável',c.owner],['Categoria',C.categoryPath(c.category,Store.get().categories)||'Sem categoria'],['Etiquetas',c.tags.map(id=>Store.get().tags.find(t=>t.id===id)?.name||'').join(', ')||'Sem etiquetas'],['Lembretes autorizados',c.consent?'Sim':'Não']].map(([label,val])=>`<div><p class="help">${label}</p><strong>${E(val)}</strong></div>`).join('')}</div><div class="form-actions">${btn(c.active?'Arquivar cliente':'Restaurar cliente','active',id)}${btn('Excluir cadastro','delete',id,'danger')}</div></div></section><section class="panel"><div class="panel-head"><h2>Resumo financeiro</h2></div>${widget('summary',rows)}</section></div>`);}
-function newBill(id){let s=Store.get();if(!s.clients.length){toast('Cadastre um cliente primeiro.');return;}openModal('Nova cobrança',`<form id="bill-form"><div class="form-grid"><div class="field span-all"><label for="clientId">Cliente</label><select id="clientId" name="clientId">${s.clients.filter(c=>c.active).map(c=>opt(c.id,c.name,id)).join('')}</select></div>${field('bill-plan','Plano *',person(id)?.plan||'','text','required maxlength="100" placeholder="Plano desta cobrança"')}${field('bill-amount','Valor (R$) *','','number','required min="0.01" max="99999999.99" step="0.01" placeholder="79,90"')}${field('bill-due','Vencimento *',C.shift(s.today,7),'date','required')}</div><div class="form-actions"><button class="btn primary" type="submit">Criar cobrança</button></div></form>`);}
-function history(messages){const labels={opened:'Conversa aberta · envio não confirmado',queued:'Agendada',accepted:'Aceita pela API',sent:'Enviada',delivered:'Entregue',read:'Lida',failed:'Falha no envio',unknown:'Resultado incerto · verificar',cancelled:'Cancelada'};if(!messages.length)return '<div class="empty"><h3>Nenhuma mensagem registrada</h3><p>As tentativas reais e aberturas manuais aparecerão aqui.</p></div>';return `<div class="data-table" role="region" aria-label="Histórico de mensagens" tabindex="0"><table><thead><tr><th>Cliente</th><th>Mensagem</th><th>Data e hora</th><th>Status</th></tr></thead><tbody>${messages.map(m=>`<tr><td>${E(person(m.clientId)?.name||'Cliente removido')}</td><td>${short(m.text||'Modelo de lembrete')}</td><td>${E(new Date(m.at).toLocaleString('pt-BR',{timeZone:Store.get().settings.timezone}))}</td><td><span class="badge">${E(labels[m.status]||m.status)}</span></td></tr>`).join('')}</tbody></table></div>`;}
-function reminders(){let s=Store.get().settings;return heading('Lembretes','Escolha os horários. O servidor executará as regras quando conectado.')+`<div class="content-grid"><section class="panel"><div class="panel-head"><h2>Regras de envio</h2><span class="badge">${Store.get().capabilities.whatsapp?'Configurado':'Não conectado'}</span></div><form id="reminder-form" class="panel-body">${s.rules.map((r,i)=>`<div class="rule-row"><label class="check"><input type="checkbox" name="${r.key}-enabled" ${r.enabled?'checked':''}><span>${['1 dia antes do vencimento','No dia do vencimento','1 dia depois do vencimento'][i]}<small>${['Antecipe o lembrete.','Lembre a cobrança do dia.','Acompanhe pendências.'][i]}</small></span></label>${field(r.key+'-time','Horário',r.time,'time','required')}</div>`).join('')}<label class="check section-gap"><input type="checkbox" name="skipPaid" checked disabled>Não enviar a clientes já pagos</label><p class="help">Proteção obrigatória: o pagamento é verificado novamente antes do envio.</p><div class="form-actions"><button class="btn primary" type="submit">Salvar lembretes</button></div></form></section><section class="panel"><div class="panel-body"><h2>Como funciona</h2><p>Horários em ${E(s.timezone)}.</p><p class="muted">Cada cobrança recebe no máximo um lembrete de cada regra. Clientes inativos ou sem autorização não entram na fila.</p><p class="help">${Store.real?'Configure o agendador conforme INSTALACAO.md.':'Os horários podem ser testados. Esta demonstração não agenda nem envia mensagens.'}</p></div></section></div>`;}
-function messages(){let s=Store.get();return heading('Mensagens','Modelos consistentes e histórico com estados reais.')+`<div class="content-grid"><section class="panel"><div class="panel-head"><h2>Modelos de mensagem manual</h2></div><form id="templates-form" class="panel-body stack"><p class="help">Variáveis: {nome}, {plano}, {valor}, {vencimento}.</p>${Object.entries(s.settings.templates).map(([key,text],i)=>`<div class="field"><label for="tpl-${key}">${['Antes do vencimento','No vencimento','Após o vencimento'][i]}</label><textarea id="tpl-${key}" name="${key}" maxlength="1500" required>${E(text)}</textarea></div>`).join('')}<div class="form-actions"><button class="btn primary" type="submit">Salvar modelos</button></div></form></section><section class="panel"><div class="panel-head"><h2>Prévia</h2></div><div class="panel-body"><div class="chat" id="template-preview">${s.clients[0]&&s.bills[0]?E(C.message(s.clients[0],s.bills[0],s.settings.templates.before)):'Cadastre um cliente para visualizar.'}</div><p class="help">Envios automáticos utilizam os modelos aprovados na Meta, configurados no servidor. Alterar o texto aqui não modifica os modelos aprovados.</p></div></section></div><section class="panel"><div class="panel-head"><h2>Histórico de mensagens</h2>${btn('Atualizar','reload')}</div>${history(s.messages)}</section>`;}
-function review(id){let b=bill(id),c=person(b?.clientId);if(!b||!c)return;if(b.paid){toast('Esta cobrança já está paga.');return;}let key=b.due<Store.get().today?'after':b.due===Store.get().today?'today':'before';let fallback=b.due>C.shift(Store.get().today,1)?'Olá {nome}, seu {plano} no valor de {valor} vence em {vencimento}.':Store.get().settings.templates[key];let text=C.message(c,b,c.message||fallback);openModal('Revisar lembrete',`<p><strong>${E(c.name)}</strong> · ${E(c.whatsapp||'WhatsApp não informado')}</p><p>${C.money(b.amount)} · Vencimento ${C.date(b.due)} · ${badge(b)}</p><div class="field"><label for="review-text">Mensagem manual</label><textarea id="review-text" maxlength="1500">${E(text)}</textarea></div><p class="help">Abrir a conversa não confirma envio ou entrega. O envio final será feito por você no WhatsApp.</p>${!c.whatsapp?'<p class="error">Cadastre o WhatsApp do cliente para abrir a conversa.</p>':''}<div class="form-actions">${btn('Voltar','close-modal')}${c.whatsapp?btn(icon('chat')+' Abrir WhatsApp','open-wa',id,'whatsapp'):''}</div>${Store.real&&Store.get().capabilities.whatsapp?`<hr><p class="help">Para envio pela API será usado o modelo aprovado correspondente a este vencimento, e não o texto editado acima. O envio é bloqueado sem autorização do cliente.</p>${btn('Revisar envio pela API','api-review',id)}`:''}`);}
+"use strict";
+function detail(id, tab = "resumo") {
+  let c = person(id);
+  if (!c)
+    return heading(
+      "Cliente não encontrado",
+      "Volte para a lista de clientes.",
+      '<a class="btn" href="#clientes">Voltar</a>',
+    );
+  let rows = Store.get().bills.filter((b) => b.clientId === id);
+  return (
+    heading(
+      c.name,
+      `Clientes / ${c.name} / ${tab}`,
+      `<a class="btn" href="#editar/${encodeURIComponent(id)}">Editar cadastro</a>` +
+        btn("+ Nova cobrança", "new-bill", id, "primary"),
+    ) +
+    `<nav class="tabs" aria-label="Seções do cliente">${["resumo", "cobrancas", "mensagens"].map((x, i) => `<a href="#cliente/${encodeURIComponent(id)}/${x}" ${x === tab ? 'aria-current="page"' : ""}>${["Resumo", "Cobranças", "Mensagens"][i]}</a>`).join("")}</nav>` +
+    (tab === "cobrancas"
+      ? `<section class="panel">${table(rows)}</section>`
+      : tab === "mensagens"
+        ? `<section class="panel">${history(Store.get().messages.filter((m) => m.clientId === id))}</section>`
+        : `<div class="content-grid"><section class="panel"><div class="panel-head"><h2>Informações do cliente</h2><span class="badge">${c.active ? "Ativo" : "Inativo"}</span></div><div class="panel-body"><div class="form-grid">${[
+            ["WhatsApp", c.whatsapp || "Não informado"],
+            ["Plano", c.plan],
+            ["Responsável", c.owner],
+            [
+              "Categoria",
+              C.categoryPath(c.category, Store.get().categories) ||
+                "Sem categoria",
+            ],
+            [
+              "Etiquetas",
+              c.tags
+                .map(
+                  (id) => Store.get().tags.find((t) => t.id === id)?.name || "",
+                )
+                .join(", ") || "Sem etiquetas",
+            ],
+            ["Lembretes autorizados", c.consent ? "Sim" : "Não"],
+          ]
+            .map(
+              ([label, val]) =>
+                `<div><p class="help">${label}</p><strong>${E(val)}</strong></div>`,
+            )
+            .join(
+              "",
+            )}</div><div class="form-actions">${btn(c.active ? "Arquivar cliente" : "Restaurar cliente", "active", id)}${btn("Excluir cadastro", "delete", id, "danger")}</div></div></section><section class="panel"><div class="panel-head"><h2>Resumo financeiro</h2></div>${widget("summary", rows)}</section></div>`)
+  );
+}
+function newBill(id) {
+  let s = Store.get();
+  if (!s.clients.length) {
+    toast("Cadastre um cliente primeiro.");
+    return;
+  }
+  openModal(
+    "Nova cobrança",
+    `<form id="bill-form"><div class="form-grid"><div class="field span-all"><label for="clientId">Cliente</label><select id="clientId" name="clientId">${s.clients
+      .filter((c) => c.active)
+      .map((c) => opt(c.id, c.name, id))
+      .join(
+        "",
+      )}</select></div>${field("bill-plan", "Plano *", person(id)?.plan || "", "text", 'required maxlength="100" placeholder="Plano desta cobrança"')}${field("bill-amount", "Valor (R$) *", "", "number", 'required min="0.01" max="99999999.99" step="0.01" placeholder="79,90"')}${field("bill-due", "Vencimento *", C.shift(s.today, 7), "date", "required")}</div><div class="form-actions"><button class="btn primary" type="submit">Criar cobrança</button></div></form>`,
+  );
+}
+function history(messages) {
+  const labels = {
+    opened: "Conversa aberta · envio não confirmado",
+    queued: "Agendada",
+    accepted: "Aceita pela API",
+    sent: "Enviada",
+    delivered: "Entregue",
+    read: "Lida",
+    failed: "Falha no envio",
+    unknown: "Resultado incerto · verificar",
+    cancelled: "Cancelada",
+  };
+  if (!messages.length)
+    return '<div class="empty"><h3>Nenhuma mensagem registrada</h3><p>As tentativas reais e aberturas manuais aparecerão aqui.</p></div>';
+  return `<div class="data-table" role="region" aria-label="Histórico de mensagens" tabindex="0"><table><thead><tr><th>Cliente</th><th>Mensagem</th><th>Data e hora</th><th>Status</th></tr></thead><tbody>${messages.map((m) => `<tr><td>${E(person(m.clientId)?.name || "Cliente removido")}</td><td>${short(m.text || "Modelo de lembrete")}</td><td>${E(new Date(m.at).toLocaleString("pt-BR", { timeZone: Store.get().settings.timezone }))}</td><td><span class="badge">${E(labels[m.status] || m.status)}</span></td></tr>`).join("")}</tbody></table></div>`;
+}
+function reminders() {
+  let s = Store.get().settings;
+  return (
+    heading(
+      "Lembretes",
+      "Escolha os horários. O servidor executará as regras quando conectado.",
+    ) +
+    `<div class="content-grid"><section class="panel"><div class="panel-head"><h2>Regras de envio</h2><span class="badge">${Store.get().capabilities.whatsapp ? "Configurado" : "Não conectado"}</span></div><form id="reminder-form" class="panel-body">${s.rules.map((r, i) => `<div class="rule-row"><label class="check"><input type="checkbox" name="${r.key}-enabled" ${r.enabled ? "checked" : ""}><span>${["1 dia antes do vencimento", "No dia do vencimento", "1 dia depois do vencimento"][i]}<small>${["Antecipe o lembrete.", "Lembre a cobrança do dia.", "Acompanhe pendências."][i]}</small></span></label>${field(r.key + "-time", "Horário", r.time, "time", "required")}</div>`).join("")}<label class="check section-gap"><input type="checkbox" name="skipPaid" checked disabled>Não enviar a clientes já pagos</label><p class="help">Proteção obrigatória: o pagamento é verificado novamente antes do envio.</p><div class="form-actions"><button class="btn primary" type="submit">Salvar lembretes</button></div></form></section><section class="panel"><div class="panel-body"><h2>Como funciona</h2><p>Horários em ${E(s.timezone)}.</p><p class="muted">Cada cobrança recebe no máximo um lembrete de cada regra. Clientes inativos ou sem autorização não entram na fila.</p><p class="help">${Store.real ? "Configure o agendador conforme INSTALACAO.md." : "Os horários podem ser testados. Esta demonstração não agenda nem envia mensagens."}</p></div></section></div>`
+  );
+}
+function messages() {
+  let s = Store.get();
+  return (
+    heading(
+      "Mensagens",
+      "Modelos consistentes e histórico com estados reais.",
+    ) +
+    `<div class="content-grid"><section class="panel"><div class="panel-head"><h2>Modelos de mensagem manual</h2></div><form id="templates-form" class="panel-body stack"><p class="help">Variáveis: {nome}, {plano}, {valor}, {vencimento}.</p>${Object.entries(
+      s.settings.templates,
+    )
+      .map(
+        ([key, text], i) =>
+          `<div class="field"><label for="tpl-${key}">${["Antes do vencimento", "No vencimento", "Após o vencimento"][i]}</label><textarea id="tpl-${key}" name="${key}" maxlength="1500" required>${E(text)}</textarea></div>`,
+      )
+      .join(
+        "",
+      )}<div class="form-actions"><button class="btn primary" type="submit">Salvar modelos</button></div></form></section><section class="panel"><div class="panel-head"><h2>Prévia</h2></div><div class="panel-body"><div class="chat" id="template-preview">${s.clients[0] && s.bills[0] ? E(C.message(s.clients[0], s.bills[0], s.settings.templates.before)) : "Cadastre um cliente para visualizar."}</div><p class="help">Envios automáticos utilizam os modelos aprovados na Meta, configurados no servidor. Alterar o texto aqui não modifica os modelos aprovados.</p></div></section></div><section class="panel"><div class="panel-head"><h2>Histórico de mensagens</h2>${btn("Atualizar", "reload")}</div>${history(s.messages)}</section>`
+  );
+}
+function whatsapp() {
+  const s = Store.get();
+  const connection = s.settings.whatsappManual || {
+    ready: false,
+    openedAt: "",
+  };
+  const ready = Boolean(connection.ready);
+  const rows = s.bills
+    .filter(
+      (b) =>
+        !b.paid &&
+        person(b.clientId)?.active &&
+        C.digits(person(b.clientId).whatsapp).length >= 10,
+    )
+    .sort((a, b) => a.due.localeCompare(b.due));
+  const openedToday = s.messages.filter(
+    (m) => m.status === "opened" && m.at?.slice(0, 10) === s.today,
+  ).length;
+
+  return (
+    heading(
+      "WhatsApp",
+      "Conecte pelo WhatsApp Web e envie cada cobrança com revisão manual.",
+      btn(icon("chat") + " Abrir WhatsApp Web", "wa-web-open", "", "whatsapp"),
+    ) +
+    `<section class="wa-connect ${ready ? "is-ready" : ""}"><div class="wa-signal" aria-hidden="true"><span>${icon("chat")}</span></div><div class="wa-connect-copy"><p class="eyebrow">CONEXÃO MANUAL</p><h2>${ready ? "Pronto para abrir conversas" : "WhatsApp desconectado"}</h2><p>${ready ? "Você confirmou que o WhatsApp Web está aberto neste navegador." : "Abra o WhatsApp Web oficial e leia o QR Code usando o aplicativo no celular."}</p><div class="wa-status" role="status"><i></i><strong>${ready ? "Pronto" : "Desconectado"}</strong><span>${ready ? "confirmação salva neste navegador" : "nenhuma sessão confirmada"}</span></div><div class="actions">${btn(icon("chat") + " Abrir WhatsApp Web", "wa-web-open", "", "whatsapp")}${btn(ready ? "Marcar como desconectado" : "Já conectei", "wa-status-toggle", ready ? "off" : "on", ready ? "" : "primary")}</div></div></section><div class="wa-stats"><section class="metric"><div class="metric-top">Contatos disponíveis<span class="metric-icon">${icon("users")}</span></div><strong>${rows.length}</strong><small>Cobranças abertas com telefone</small></section><section class="metric"><div class="metric-top">Abertas hoje<span class="metric-icon">${icon("chat")}</span></div><strong>${openedToday}</strong><small>Conversas solicitadas pelo Gestor</small></section><section class="metric"><div class="metric-top">Modo de envio<span class="metric-icon">${icon("check")}</span></div><strong class="wa-mode">Manual</strong><small>Você revisa e confirma no WhatsApp</small></section></div><div class="wa-layout"><section class="panel"><div class="panel-head"><div><h2>Fila de cobranças</h2><p class="help">Ordenada pelo vencimento mais próximo.</p></div><span class="badge ${ready ? "pago" : "pendente"}">${ready ? "Pronto" : "Conecte primeiro"}</span></div><div class="wa-queue">${
+      rows
+        .map((b) => {
+          const c = person(b.clientId);
+          const late = C.days(s.today, b.due);
+          return `<article class="wa-contact"><span class="avatar">${E(
+            c.name
+              .split(" ")
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((x) => x[0])
+              .join(""),
+          )}</span><div class="wa-contact-info"><strong>${E(c.name)}</strong><span>${E(c.whatsapp)} · ${E(b.plan || c.plan)}</span><small>${b.due < s.today ? late + " dia(s) em atraso" : "Vence em " + C.date(b.due)} · ${C.money(b.amount)}</small></div>${badge(b)}${btn(icon("chat") + " Preparar mensagem", "wa-compose", b.id, "small whatsapp")}</article>`;
+        })
+        .join("") ||
+      '<div class="empty"><h3>Nenhuma conversa pendente</h3><p>Cadastre um WhatsApp válido em um cliente com cobrança aberta.</p></div>'
+    }</div></section><aside class="panel wa-guide"><div class="panel-head"><h2>Como conectar</h2></div><ol class="wa-steps"><li><span>1</span><div><strong>Abra o WhatsApp Web</strong><p>Use somente a página oficial.</p></div></li><li><span>2</span><div><strong>Leia o QR Code</strong><p>No celular, acesse Aparelhos conectados e aponte a câmera para o código exibido.</p></div></li><li><span>3</span><div><strong>Confirme aqui</strong><p>Volte ao Gestor e clique em “Já conectei”.</p></div></li><li><span>4</span><div><strong>Revise antes de enviar</strong><p>O Gestor preenche a mensagem; o envio final continua sendo feito por você.</p></div></li></ol><div class="notice"><strong>Importante</strong><p>O Gestor não lê sua conta nem confirma entrega. O status “Pronto” é apenas a confirmação feita neste navegador.</p></div></aside></div>`
+  );
+}
+function review(id) {
+  let b = bill(id),
+    c = person(b?.clientId);
+  if (!b || !c) return;
+  if (b.paid) {
+    toast("Esta cobrança já está paga.");
+    return;
+  }
+  let key =
+    b.due < Store.get().today
+      ? "after"
+      : b.due === Store.get().today
+        ? "today"
+        : "before";
+  let fallback =
+    b.due > C.shift(Store.get().today, 1)
+      ? "Olá {nome}, seu {plano} no valor de {valor} vence em {vencimento}."
+      : Store.get().settings.templates[key];
+  let text = C.message(c, b, c.message || fallback);
+  openModal(
+    "Revisar lembrete",
+    `<p><strong>${E(c.name)}</strong> · ${E(c.whatsapp || "WhatsApp não informado")}</p><p>${C.money(b.amount)} · Vencimento ${C.date(b.due)} · ${badge(b)}</p><div class="field"><label for="review-text">Mensagem manual</label><textarea id="review-text" maxlength="1500">${E(text)}</textarea></div><p class="help">Abrir a conversa não confirma envio ou entrega. O envio final será feito por você no WhatsApp.</p>${!c.whatsapp ? '<p class="error">Cadastre o WhatsApp do cliente para abrir a conversa.</p>' : ""}<div class="form-actions">${btn("Voltar", "close-modal")}${c.whatsapp ? btn(icon("chat") + " Abrir WhatsApp", "open-wa", id, "whatsapp") : ""}</div>${Store.real && Store.get().capabilities.whatsapp ? `<hr><p class="help">Para envio pela API será usado o modelo aprovado correspondente a este vencimento, e não o texto editado acima. O envio é bloqueado sem autorização do cliente.</p>${btn("Revisar envio pela API", "api-review", id)}` : ""}`,
+  );
+}
